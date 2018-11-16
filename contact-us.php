@@ -1,3 +1,122 @@
+<?php
+$your_email = 'youremail@youremail.com'; // <<=== update to your email address
+
+session_start();
+$errors = '';
+$name = '';
+$visitor_email = '';
+$phone_number = '';
+$address = '';
+$company = '';
+$subject = '';
+$user_message = '';
+
+if (isset($_POST['submit']))
+  {
+  $name = $_POST['name'];
+  $visitor_email = $_POST['email'];
+  $phone_number = $_POST['phonenumber'];
+  $address = $_POST['address'];
+  $company = $_POST['company'];
+  $subject = $_POST['subject'];
+  $user_message = $_POST['message'];
+
+  if (empty($name))
+    {
+    $errors.= "\n * Name are required. ";
+    }
+
+  if (empty($visitor_email))
+    {
+    $errors.= "\n * Email are required. ";
+    }
+
+  if (empty($phone_number))
+    {
+    $errors.= "\n * Phone Number are required. ";
+    }
+
+  if (empty($address))
+    {
+    $errors.= "\n * Address are required. ";
+    }
+
+  if (empty($company))
+    {
+    $errors.= "\n * Company are required. ";
+    }
+
+  if (empty($subject))
+    {
+    $errors.= "\n * Subject are required. ";
+    }
+
+  if (IsInjected($visitor_email))
+    {
+    $errors.= "\n Bad email value!";
+    }
+
+  if (empty($_SESSION['6_letters_code']) || strcasecmp($_SESSION['6_letters_code'], $_POST['6_letters_code']) != 0)
+    {
+
+    // Note: the captcha code is compared case insensitively.
+    // if you want case sensitive match, update the check above to
+    // strcmp()
+
+    $errors.= "\n * The captcha code does not match!";
+    }
+
+  if (empty($errors))
+    {
+
+    // send the email
+
+    $to = $your_email;
+    $subject_form = "Veil Contact Form";
+    $from = $your_email;
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $body = "A user  $name submitted the contact form:\n" . "Name: $name\n" . "Email: $visitor_email \n" . "Phone Number: $phone_number \n" . "Address: $address \n" . "Company: $company \n" . "Subject: $subject \n" . "Message: \n " . "$user_message\n" . "IP: $ip\n";
+    $headers = "From: $from \r\n";
+    $headers.= "Reply-To: $visitor_email \r\n";
+    mail($to, $subject_form, $body, $headers);
+    /*
+    *
+    * do processing and error checking
+    *
+    **/
+    header("Location: page-contact-us.php?formsubmit=1");
+    exit();
+    }
+  }
+
+// Function to validate against any email injection attempts
+
+function IsInjected($str)
+  {
+  $injections = array(
+    '(\n+)',
+    '(\r+)',
+    '(\t+)',
+    '(%0A+)',
+    '(%0D+)',
+    '(%08+)',
+    '(%09+)'
+  );
+  $inject = join('|', $injections);
+  $inject = "/$inject/i";
+  if (preg_match($inject, $str))
+    {
+    return true;
+    }
+    else
+    {
+    return false;
+    }
+  }
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,65 +264,66 @@
                     <p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime. nobis est eligendi optio cumque nihil impedit quo minus.</p>
 
                     <!-- Begin: FORM -->
-                    <h1 class="text-center text-base margin-bottom-small font-size-60px"><i class="fa fa-envelope-o"></i></h1><h5 class="text-center margin-bottom-small">Your message has been sent! We will reply within 24 hours!</h5><p class="text-center"><a class="btn btn-base btn-lg text-weight-600 text-uppercase box-shadow-active" href="page-contact-us.php">Submit New Form</a></p>
+                    <?php if(isset($_GET[ 'formsubmit'])) { /* if the form has been submitted */ echo '<h1 class="text-center text-base margin-bottom-small font-size-60px"><i class="fa fa-envelope-o"></i></h1>'; echo '<h5 class="text-center margin-bottom-small">Your message has been sent! We will reply within 24 hours!</h5>'; echo '<p class="text-center"><a class="btn btn-base btn-lg text-weight-600 text-uppercase box-shadow-active" href="page-contact-us.php">Submit New Form</a></p>'; ?>
+                    <?php } else { // show the form ?>
 
-<!--                     <div class="alert alert-danger"></div> -->
+                    <?php if(!empty($errors)){ echo '<div class="alert alert-danger">' .nl2br($errors). '</div>'; } ?>
 
-                    <form method="POST" name="assets/contact_form">
+                    <form method="POST" name="assets/contact_form" action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>">
 
                         <div class="row">
                             <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="control-label">Name</label>
-                                    <input type="text" placeholder="Name" class="form-control input-lg" name="name" value="">
+                                    <input type="text" placeholder="Name" class="form-control input-lg" name="name" value="<?php  echo htmlentities($name); ?>">
                                 </div>
                             </div>
                             <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="control-label">Email</label>
-                                    <input type="email" placeholder="Email" class="form-control input-lg" name="email" value="">
+                                    <input type="email" placeholder="Email" class="form-control input-lg" name="email" value="<?php  echo htmlentities($visitor_email); ?>">
                                 </div>
                             </div>
                             <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="control-label">Phone Number</label>
-                                    <input type="text" placeholder="Phone Number" class="form-control input-lg" name="phonenumber" value="Phone">
+                                    <input type="text" placeholder="Phone Number" class="form-control input-lg" name="phonenumber" value="<?php  echo htmlentities($phone_number); ?>">
                                 </div>
                             </div>
                             <div class="col-md-6 col-sm-6">
                                 <div class="form-group">
                                     <label class="control-label">Address</label>
-                                    <input type="text" placeholder="Address" class="form-control input-lg" name="address" value="">
+                                    <input type="text" placeholder="Address" class="form-control input-lg" name="address" value="<?php  echo htmlentities($address); ?>">
                                 </div>
                             </div>
                             <div class="col-md-6 col-sm-6">
                                 <div class="form-group">
                                     <label class="control-label">Company</label>
-                                    <input type="text" placeholder="Company" class="form-control input-lg" name="company" value="">
+                                    <input type="text" placeholder="Company" class="form-control input-lg" name="company" value="<?php  echo htmlentities($company); ?>">
                                 </div>
                             </div>
                             <div class="col-md-12 col-sm-12">
                                 <div class="form-group">
                                     <label class="control-label">Subject</label>
-                                    <input type="text" placeholder="Subject" class="form-control input-lg" name="subject" value="">
+                                    <input type="text" placeholder="Subject" class="form-control input-lg" name="subject" value="<?php  echo htmlentities($subject); ?>">
                                 </div>
                             </div>
                             <div class="col-md-12 col-sm-12">
                                 <div class="form-group">
                                     <label class="control-label">Your Message!</label>
-                                    <textarea rows="4" cols=30 placeholder="Your Message!" class="form-control input-lg" name="message"></textarea>
+                                    <textarea rows="4" cols=30 placeholder="Your Message!" class="form-control input-lg" name="message"><?php echo htmlentities($user_message); ?></textarea>
                                 </div>
                             </div>
-<!--                             <div class="col-md-6 col-sm-6">
+                            <div class="col-md-6 col-sm-6">
                                 <div class="form-group">
-                                    <img src="" id='captchaimg'>
+                                    <img src="assets/contact_form/captcha_code_file.php?rand=<?php  echo rand(); ?>" id='captchaimg'>
                                     <br>
                                     <label for='message'>Enter the code above here :</label>
                                     <br>
                                     <input type="text" id="6_letters_code" name="6_letters_code" class="form-control input-lg">
                                     <small>Can't read the image? click <a class="is-text" href='javascript: refreshCaptcha();'>here</a> to refresh</small>
                                 </div>
-                            </div> -->
+                            </div>
                         </div>
                         <button type="submit" value="Submit" name='submit' class="btn btn-base btn-lg text-weight-600 text-uppercase box-shadow-active">Submit</button>
                     </form>
@@ -230,6 +350,7 @@
                             img.src = img.src.substring(0, img.src.lastIndexOf("?")) + "?rand=" + Math.random() * 1000;
                         }
                     </script>
+                    <?php } ?>
                     <!-- End: FORM -->
 
                 </div>
